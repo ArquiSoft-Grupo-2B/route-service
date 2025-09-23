@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: routes_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: routes_db
+      POSTGRES_USER: routes_user
+      POSTGRES_PASSWORD: routes_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - routes_network
+
+  # Aplicación NestJS
+  app:
+    build: .
+    container_name: routes_app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: routes_user
+      DB_PASSWORD: routes_password
+      DB_NAME: routes_db
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - routes_network
+    command: npm run start:dev
+
+  # Adminer para administrar la base de datos (opcional)
+  adminer:
+    image: adminer:latest
+    container_name: routes_adminer
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    networks:
+      - routes_network
+
+volumes:
+  postgres_data:
+
+networks:
+  routes_network:
+    driver: bridge
