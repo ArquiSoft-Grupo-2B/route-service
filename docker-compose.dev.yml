@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Solo la base de datos PostgreSQL para desarrollo
+  postgres:
+    image: postgres:15-alpine
+    container_name: routes_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: routes_db
+      POSTGRES_USER: routes_user
+      POSTGRES_PASSWORD: routes_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - routes_dev_network
+
+  # Adminer para administrar la base de datos
+  adminer:
+    image: adminer:latest
+    container_name: routes_adminer_dev
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    networks:
+      - routes_dev_network
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  routes_dev_network:
+    driver: bridge
