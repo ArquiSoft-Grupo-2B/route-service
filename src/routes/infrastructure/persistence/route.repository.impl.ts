@@ -7,6 +7,7 @@ import {
   CreateRouteData,
   UpdateRouteData,
 } from '../../domain/repositories/route.repository';
+import { CreateRouteDto } from '../../dto/create-route.dto';
 
 @Injectable()
 export class RouteRepositoryImpl implements RouteRepository {
@@ -15,9 +16,9 @@ export class RouteRepositoryImpl implements RouteRepository {
     private readonly routeRepository: Repository<Route>,
   ) {}
 
-  async create(data: CreateRouteData): Promise<Route> {
-    const route = this.routeRepository.create(data);
-    return await this.routeRepository.save(route);
+  async create(createRouteDto: CreateRouteDto): Promise<Route> {
+    const newRoute = this.routeRepository.create(createRouteDto);
+    return await this.routeRepository.save(newRoute);
   }
 
   async findAll(): Promise<Route[]> {

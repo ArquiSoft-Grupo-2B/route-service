@@ -13,7 +13,7 @@ export class CreateRouteUseCase {
     private readonly routeRepository: RouteRepository,
   ) {}
 
-  async execute(data: CreateRouteData): Promise<Route> {
+  async execute(data: CreateRouteData): Promise<Route> { 
     // Validaciones de negocio
     if (data.distance_km && data.distance_km < 0) {
       throw new BadRequestException('La distancia no puede ser negativa');

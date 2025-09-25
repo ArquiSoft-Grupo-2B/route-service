@@ -24,6 +24,11 @@ import { RoutesController } from './presentation/routes.controller';
   imports: [TypeOrmModule.forFeature([Route])],
   controllers: [RoutesController],
   providers: [
+    // Repository Implementation
+    {
+      provide: ROUTE_REPOSITORY_TOKEN,
+      useClass: RouteRepositoryImpl,
+    },
     // Use Cases
     CreateRouteUseCase,
     GetRoutesUseCase,
@@ -32,11 +37,6 @@ import { RoutesController } from './presentation/routes.controller';
     DeleteRouteUseCase,
     GetRoutesByCreatorUseCase,
     GetRoutesByRatingUseCase,
-    // Repository Implementation
-    {
-      provide: ROUTE_REPOSITORY_TOKEN,
-      useClass: RouteRepositoryImpl,
-    },
   ],
   exports: [
     CreateRouteUseCase,
