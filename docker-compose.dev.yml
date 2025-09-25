@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  # Solo la base de datos PostgreSQL para desarrollo
+  # Solo la base de datos PostgreSQL con PostGIS para desarrollo
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.3-alpine
     container_name: routes_postgres_dev
     restart: unless-stopped
     environment:
@@ -11,9 +11,10 @@ services:
       POSTGRES_USER: routes_user
       POSTGRES_PASSWORD: routes_password
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - routes_dev_network
 
