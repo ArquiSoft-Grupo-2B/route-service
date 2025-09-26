@@ -13,6 +13,7 @@ import { UpdateRouteUseCase } from './application/use-cases/update-route.usecase
 import { DeleteRouteUseCase } from './application/use-cases/delete-route.usecase';
 import { GetRoutesByCreatorUseCase } from './application/use-cases/get-routes-by-creator.usecase';
 import { GetRoutesByRatingUseCase } from './application/use-cases/get-routes-by-rating.usecase';
+import { FindNearbyRoutesUseCase } from './application/use-cases/find-nearby-routes.usecase';
 
 // Infrastructure
 import { RouteRepositoryImpl } from './infrastructure/persistence/route.repository.impl';
@@ -37,6 +38,7 @@ import { RoutesController } from './presentation/routes.controller';
     DeleteRouteUseCase,
     GetRoutesByCreatorUseCase,
     GetRoutesByRatingUseCase,
+    FindNearbyRoutesUseCase,
   ],
   exports: [
     CreateRouteUseCase,
@@ -46,6 +48,7 @@ import { RoutesController } from './presentation/routes.controller';
     DeleteRouteUseCase,
     GetRoutesByCreatorUseCase,
     GetRoutesByRatingUseCase,
+    FindNearbyRoutesUseCase,
   ],
 })
 export class RoutesModule {}
