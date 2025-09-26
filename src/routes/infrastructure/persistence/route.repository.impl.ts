@@ -6,6 +6,7 @@ import {
   RouteRepository,
   CreateRouteData,
   UpdateRouteData,
+  FindNearbyParams,
 } from '../../domain/repositories/route.repository';
 import { CreateRouteDto } from '../../dto/create-route.dto';
 
@@ -16,8 +17,8 @@ export class RouteRepositoryImpl implements RouteRepository {
     private readonly routeRepository: Repository<Route>,
   ) {}
 
-  async create(createRouteDto: CreateRouteDto): Promise<Route> {
-    const newRoute = this.routeRepository.create(createRouteDto);
+  async create(data: CreateRouteData): Promise<Route> {
+    const newRoute = this.routeRepository.create(data);
     return await this.routeRepository.save(newRoute);
   }
 
@@ -29,6 +30,41 @@ export class RouteRepositoryImpl implements RouteRepository {
 
   async findById(id: string): Promise<Route | null> {
     return await this.routeRepository.findOne({ where: { id } });
+  }
+
+  async findNearby(params: FindNearbyParams): Promise<Route[]> {
+    const { latitude, longitude, radius_m } = params;
+    
+    // Crear punto de referencia en formato WKT (Well-Known Text)
+    const referencePoint = `POINT(${longitude} ${latitude})`;
+    
+    return await this.routeRepository
+      .createQueryBuilder('route')
+      .select([
+        'route.id',
+        'route.creator_id', 
+        'route.name',
+        'route.distance_km',
+        'route.est_time_min',
+        'route.avg_rating',
+        'route.geometry',
+        'route.created_at',
+        'route.updated_at'
+      ])
+      .addSelect(
+        `ST_Distance(route.geometry, ST_GeomFromText(:referencePoint, 4326))`,
+        'distance_meters'
+      )
+      .where(
+        `ST_DWithin(route.geometry, ST_GeomFromText(:referencePoint, 4326), :radius_m)`
+      )
+      .setParameters({ 
+        referencePoint, 
+        radius_m 
+      })
+      .orderBy('distance_meters', 'ASC')
+      .getRawAndEntities()
+      .then(result => result.entities);
   }
 
   async update(id: string, data: UpdateRouteData): Promise<Route | null> {
