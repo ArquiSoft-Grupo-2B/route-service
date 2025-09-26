@@ -7,8 +7,10 @@ import {
   Param,
   Delete,
   Query,
+  Headers,
   HttpStatus,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
 import { CreateRouteDto } from '../dto/create-route.dto';
 import { UpdateRouteDto } from '../dto/update-route.dto';
@@ -41,10 +43,18 @@ export class RoutesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createRouteDto: CreateRouteDto): Promise<ApiResponse> {
+  async create(
+    @Body() createRouteDto: CreateRouteDto,
+    @Headers('x-user-id') userId?: string,
+  ): Promise<ApiResponse> {
     try {
+      // Validar que el usuario esté autenticado
+      if (!userId) {
+        throw new BadRequestException('Header x-user-id es requerido (Firebase UID)');
+      }
+
       const routeData = RouteMapper.fromCreateDtoToDomain(createRouteDto);
-      const route = await this.createRouteUseCase.execute(routeData);
+      const route = await this.createRouteUseCase.execute(routeData, userId);
 
       return {
         success: true,
@@ -56,7 +66,7 @@ export class RoutesController {
       return {
         success: false,
         message: error.message,
-        statusCode: HttpStatus.BAD_REQUEST,
+        statusCode: error.status || HttpStatus.BAD_REQUEST,
       };
     }
   }
@@ -182,10 +192,16 @@ export class RoutesController {
   async update(
     @Param('id') id: string,
     @Body() updateRouteDto: UpdateRouteDto,
+    @Headers('x-user-id') userId?: string,
   ): Promise<ApiResponse> {
     try {
+      // Validar que el usuario esté autenticado
+      if (!userId) {
+        throw new BadRequestException('Header x-user-id es requerido para autorización');
+      }
+
       const routeData = RouteMapper.fromUpdateDtoToDomain(updateRouteDto);
-      const route = await this.updateRouteUseCase.execute(id, routeData);
+      const route = await this.updateRouteUseCase.execute(id, routeData, userId);
 
       return {
         success: true,
@@ -204,9 +220,17 @@ export class RoutesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string): Promise<ApiResponse> {
+  async remove(
+    @Param('id') id: string,
+    @Headers('x-user-id') userId?: string,
+  ): Promise<ApiResponse> {
     try {
-      await this.deleteRouteUseCase.execute(id);
+      // Validar que el usuario esté autenticado
+      if (!userId) {
+        throw new BadRequestException('Header x-user-id es requerido para autorización');
+      }
+
+      await this.deleteRouteUseCase.execute(id, userId);
 
       return {
         success: true,
