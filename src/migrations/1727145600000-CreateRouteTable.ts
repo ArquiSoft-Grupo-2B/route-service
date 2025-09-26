@@ -49,7 +49,7 @@ export class CreateRouteTable1727145600000 implements MigrationInterface {
           },
           {
             name: 'geometry',
-            type: 'geometry',
+            type: 'geography',
             spatialFeatureType: 'LineString',
             srid: 4326,
             isNullable: true,
