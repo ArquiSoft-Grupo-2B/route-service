@@ -5,7 +5,7 @@ import {
   IsObject,
   MaxLength,
 } from 'class-validator';
-import type { Point } from 'geojson';
+import type { LineString } from '../domain/entities/route.entity';
 
 export class CreateRouteDto {
   @IsOptional()
@@ -31,5 +31,5 @@ export class CreateRouteDto {
 
   @IsOptional()
   @IsObject()
-  geometry?: Point;
+  geometry?: LineString;
 }
