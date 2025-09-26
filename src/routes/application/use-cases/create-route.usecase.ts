@@ -13,7 +13,16 @@ export class CreateRouteUseCase {
     private readonly routeRepository: RouteRepository,
   ) {}
 
-  async execute(data: CreateRouteData): Promise<Route> { 
+  async execute(data: CreateRouteData, creatorId: string): Promise<Route> { 
+    // Validación de autorización
+    if (!creatorId || creatorId.trim() === '') {
+      throw new BadRequestException('Creator ID (Firebase UID) es requerido');
+    }
+
+    if (!data.name || data.name.trim() === '') {
+      throw new BadRequestException('El nombre de la ruta es requerido');
+    }
+
     // Validaciones de negocio
     if (data.distance_km && data.distance_km < 0) {
       throw new BadRequestException('La distancia no puede ser negativa');
@@ -28,9 +37,15 @@ export class CreateRouteUseCase {
     }
 
     try {
-      return await this.routeRepository.create(data);
+      // Asignar el creator_id desde el parámetro
+      const routeData: CreateRouteData = {
+        ...data,
+        creator_id: creatorId,
+      };
+
+      return await this.routeRepository.create(routeData);
     } catch (error) {
-      throw new BadRequestException('Error al crear la ruta');
+      throw new BadRequestException('Error al crear la ruta: ' + error.message);
     }
   }
 }
