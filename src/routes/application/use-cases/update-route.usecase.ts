@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Inject,
 } from '@nestjs/common';
 import type {
@@ -18,9 +19,24 @@ export class UpdateRouteUseCase {
     private readonly routeRepository: RouteRepository,
   ) {}
 
-  async execute(id: string, data: UpdateRouteData): Promise<Route> {
+  async execute(id: string, data: UpdateRouteData, userId: string): Promise<Route> {
     if (!id || id.trim() === '') {
       throw new BadRequestException('ID de ruta requerido');
+    }
+
+    if (!userId || userId.trim() === '') {
+      throw new BadRequestException('User ID es requerido para autorización');
+    }
+
+    // Verificar que la ruta existe y obtener el creator_id
+    const existingRoute = await this.routeRepository.findById(id);
+    if (!existingRoute) {
+      throw new NotFoundException(`Ruta con ID ${id} no encontrada`);
+    }
+
+    // Verificar autorización: solo el creador puede actualizar
+    if (existingRoute.creator_id !== userId) {
+      throw new ForbiddenException('No tienes permisos para actualizar esta ruta');
     }
 
     // Validaciones de negocio para actualización
@@ -39,10 +55,11 @@ export class UpdateRouteUseCase {
       throw new BadRequestException('La calificación debe estar entre 0 y 5');
     }
 
+    // Proceder con la actualización
     const updatedRoute = await this.routeRepository.update(id, data);
 
     if (!updatedRoute) {
-      throw new NotFoundException(`Ruta con ID ${id} no encontrada`);
+      throw new NotFoundException(`Error al actualizar la ruta con ID ${id}`);
     }
 
     return updatedRoute;
