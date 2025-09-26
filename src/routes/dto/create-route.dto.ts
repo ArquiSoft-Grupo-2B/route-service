@@ -4,30 +4,26 @@ import {
   IsNumber,
   IsObject,
   MaxLength,
+  IsNotEmpty,
+  Min,
 } from 'class-validator';
 import type { LineString } from '../domain/entities/route.entity';
 
 export class CreateRouteDto {
-  @IsOptional()
-  @IsString()
-  creator_id?: string;
+  @IsNotEmpty({ message: 'El nombre de la ruta es requerido' })
+  @IsString({ message: 'El nombre debe ser un texto válido' })
+  @MaxLength(150, { message: 'El nombre no puede exceder 150 caracteres' })
+  name: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(150)
-  name?: string;
-
-  @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'La distancia debe ser un número válido' })
+  @Min(0, { message: 'La distancia no puede ser negativa' })
   distance_km?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'El tiempo estimado debe ser un número válido' })
+  @Min(0, { message: 'El tiempo estimado no puede ser negativo' })
   est_time_min?: number;
-
-  @IsOptional()
-  @IsNumber()
-  avg_rating?: number;
 
   @IsOptional()
   @IsObject()
