@@ -24,13 +24,13 @@ export class CreateRouteTable1727145600000 implements MigrationInterface {
           {
             name: 'creator_id',
             type: 'text',
-            isNullable: true,
+            isNullable: false,
           },
           {
             name: 'name',
             type: 'varchar',
             length: '150',
-            isNullable: true,
+            isNullable: false,
           },
           {
             name: 'distance_km',
