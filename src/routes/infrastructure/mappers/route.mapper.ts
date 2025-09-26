@@ -9,22 +9,21 @@ import {
 export class RouteMapper {
   static fromCreateDtoToDomain(dto: CreateRouteDto): CreateRouteData {
     return {
-      creator_id: dto.creator_id,
+      // creator_id se asigna en el UseCase, no desde el DTO
       name: dto.name,
       distance_km: dto.distance_km,
       est_time_min: dto.est_time_min,
-      avg_rating: dto.avg_rating,
       geometry: dto.geometry,
     };
   }
 
   static fromUpdateDtoToDomain(dto: UpdateRouteDto): UpdateRouteData {
     return {
-      creator_id: dto.creator_id,
+      // creator_id no se puede cambiar en update
+      // avg_rating se maneja por separado en otra funcionalidad
       name: dto.name,
       distance_km: dto.distance_km,
       est_time_min: dto.est_time_min,
-      avg_rating: dto.avg_rating,
       geometry: dto.geometry,
     };
   }
