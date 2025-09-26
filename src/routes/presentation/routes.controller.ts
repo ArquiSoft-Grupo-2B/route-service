@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { CreateRouteDto } from '../dto/create-route.dto';
 import { UpdateRouteDto } from '../dto/update-route.dto';
+import { FindNearbyRoutesDto } from '../dto/find-nearby-routes.dto';
 import { ApiResponse } from '../../../types/ApiResponse';
 import { RouteMapper } from '../infrastructure/mappers/route.mapper';
 
@@ -23,6 +24,7 @@ import { UpdateRouteUseCase } from '../application/use-cases/update-route.usecas
 import { DeleteRouteUseCase } from '../application/use-cases/delete-route.usecase';
 import { GetRoutesByCreatorUseCase } from '../application/use-cases/get-routes-by-creator.usecase';
 import { GetRoutesByRatingUseCase } from '../application/use-cases/get-routes-by-rating.usecase';
+import { FindNearbyRoutesUseCase } from '../application/use-cases/find-nearby-routes.usecase';
 
 @Controller('routes')
 export class RoutesController {
@@ -34,6 +36,7 @@ export class RoutesController {
     private readonly deleteRouteUseCase: DeleteRouteUseCase,
     private readonly getRoutesByCreatorUseCase: GetRoutesByCreatorUseCase,
     private readonly getRoutesByRatingUseCase: GetRoutesByRatingUseCase,
+    private readonly findNearbyRoutesUseCase: FindNearbyRoutesUseCase,
   ) {}
 
   @Post()
@@ -114,6 +117,35 @@ export class RoutesController {
       return {
         success: true,
         message: 'Rutas filtradas por calificación obtenidas exitosamente',
+        data: RouteMapper.toResponseList(routes),
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+  }
+
+  @Get('near')
+  async findNearbyRoutes(
+    @Query() findNearbyDto: FindNearbyRoutesDto,
+  ): Promise<ApiResponse> {
+    try {
+      // Transformar DTO a parámetros del dominio
+      const params = {
+        latitude: findNearbyDto.lat,
+        longitude: findNearbyDto.lng,
+        radius_m: findNearbyDto.radius_m || 5000,
+      };
+
+      const routes = await this.findNearbyRoutesUseCase.execute(params);
+
+      return {
+        success: true,
+        message: `Se encontraron ${routes.length} rutas cercanas en un radio de ${params.radius_m} metros`,
         data: RouteMapper.toResponseList(routes),
         statusCode: HttpStatus.OK,
       };
