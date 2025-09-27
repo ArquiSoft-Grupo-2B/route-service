@@ -1,6 +1,6 @@
 # Routes API
 
-Aplicación NestJS con TypeORM y PostgreSQL, configurada con Docker para desarrollo local.
+Servicio de rutas geoespaciales para RunPath Bogotá. NestJS con TypeORM, PostgreSQL+PostGIS y arquitectura hexagonal.
 
 ## 🚀 Inicio Rápido
 
@@ -32,11 +32,11 @@ npm run docker:full
 
 ## 🗄️ Base de Datos
 
-La aplicación usa PostgreSQL con las siguientes credenciales por defecto:
+La aplicación usa PostgreSQL+PostGIS para datos geoespaciales:
 
 ```
 Host: localhost
-Puerto: 5432
+Puerto: 5432 (producción) / 5433 (desarrollo)
 Base de datos: routes_db
 Usuario: routes_user
 Contraseña: routes_password
@@ -73,19 +73,82 @@ npm run test:cov       # Coverage
 ## 🌐 URLs Disponibles
 
 - **API**: http://localhost:3000
+- **Swagger Docs**: http://localhost:3000/api
 - **Adminer** (Admin DB): http://localhost:8080
+
+## 📡 Endpoints Disponibles
+
+### Públicos (sin autenticación)
+- `GET /routes` - Obtener todas las rutas
+- `GET /routes/near?lat=X&lng=Y&radius_m=Z` - Buscar rutas cercanas
+- `GET /routes/:id` - Obtener ruta por ID
+- `GET /routes/creator/:creatorId` - Rutas por creador
+- `GET /routes/rating?min=X&max=Y` - Filtrar por calificación
+
+### Protegidos (requieren JWT)
+- `POST /routes` - Crear nueva ruta
+- `PATCH /routes/:id` - Actualizar ruta (solo propietario)
+- `DELETE /routes/:id` - Eliminar ruta (solo propietario)
+
+### Funcionalidades especiales
+- `GET /routes/:id/directions?fromLat=X&fromLng=Y` - Indicaciones al inicio de ruta
+
+> 📖 **Documentación interactiva completa disponible en Swagger**: http://localhost:3000/api
 
 ## 📁 Estructura del Proyecto
 
 ```
 src/
+├── common/          # Guards y módulos compartidos
 ├── config/          # Configuración de base de datos
 ├── migrations/      # Migraciones de TypeORM
-├── app.controller.ts
-├── app.service.ts
+├── routes/          # Módulo principal (arquitectura hexagonal)
+│   ├── domain/      # Entidades y contratos
+│   ├── application/ # Casos de uso
+│   ├── infrastructure/ # Implementaciones
+│   └── presentation/   # Controladores HTTP
 ├── app.module.ts
 └── main.ts
 ```
+
+
+
+## ⚙️ Variables de Entorno
+
+```bash
+# Copia el archivo de ejemplo
+cp env.example .env.development
+
+# Configura las variables necesarias:
+DB_HOST=localhost
+DB_PORT=5433
+DB_USER=routes_user
+DB_PASSWORD=routes_password
+DB_NAME=routes_db
+PORT=3000
+
+# Microservicios (requeridos)
+CALCULATION_SERVICE_URL=http://localhost:8080
+AUTH_SERVICE_JWT_SECRET=tu_secreto_compartido_con_auth_service
+```
+
+## 🔌 Dependencias de Microservicios
+
+Este servicio **requiere** otros servicios para funcionar completamente:
+
+### 🛡️ Servicio de Autenticación
+- **Debe estar corriendo** para endpoints protegidos
+- **Genera JWT** que este servicio valida
+- **Secret compartido** debe coincidir
+
+### ⚡ Servicio de Cálculo (C++)
+- **Puerto 8080** por defecto
+- **POST /calculate** - Calcula distancia/tiempo de rutas
+- **POST /directions** - Genera indicaciones peatonales
+
+> ⚠️ **Sin estos servicios**, las funciones de autenticación y cálculo precisos no funcionarán.
+
+
 
 ## 📚 Documentación Adicional
 
