@@ -46,16 +46,18 @@ export class RouteCalculationService {
   async calculateRouteMetrics(
     geometry: LineString,
   ): Promise<CalculationResponse> {
-    try {
-      if (!geometry?.coordinates || geometry.coordinates.length < 2) {
-        throw new Error(
-          'Se requieren al menos dos coordenadas para calcular la ruta con OSRM',
-        );
-      }
+    if (!geometry?.coordinates || geometry.coordinates.length < 2) {
+      throw new Error(
+        'Se requieren al menos dos coordenadas para calcular la ruta con OSRM',
+      );
+    }
 
+    try {
       const coordinatesPath = this.buildCoordinatesPath(geometry.coordinates);
       const url = this.buildOsrmUrl('route', coordinatesPath, {
         overview: 'false',
+        geometries: 'geojson',
+        annotations: 'distance,duration',
       });
 
       const response = await fetch(url);
@@ -66,8 +68,6 @@ export class RouteCalculationService {
 
       const payload = (await response.json()) as OsrmRouteResponse;
 
-      console.log(payload);
-
       if (payload.code !== 'Ok' || !payload.routes?.length) {
         throw new Error(
           `OSRM no pudo calcular la ruta: ${payload.message || payload.code}`,
@@ -75,14 +75,31 @@ export class RouteCalculationService {
       }
 
       const firstRoute = payload.routes[0];
+      const distanceMeters = Number(firstRoute.distance);
+      const durationSeconds = Number(firstRoute.duration);
 
-      return {
-        distance_km: firstRoute.distance / 1000,
-        est_time_min: firstRoute.duration / 60,
-      };
+      if (
+        Number.isFinite(distanceMeters) &&
+        Number.isFinite(durationSeconds) &&
+        distanceMeters > 0 &&
+        durationSeconds > 0
+      ) {
+        return {
+          distance_km: distanceMeters / 1000,
+          est_time_min: durationSeconds / 60,
+        };
+      }
+
+      this.logger.warn(
+        'OSRM devolvió distancia o duración igual a 0, se utilizará cálculo local',
+      );
     } catch (error) {
-      throw new Error(`Error al obtener métricas con OSRM: ${error.message}`);
+      this.logger.warn(
+        `Fallo al obtener métricas con OSRM, se utilizará cálculo local: ${error.message}`,
+      );
     }
+
+    return this.calculateFallbackMetrics(geometry);
   }
 
   /**
@@ -169,5 +186,89 @@ export class RouteCalculationService {
     }
 
     return url.toString();
+  }
+
+  private calculateFallbackMetrics(geometry: LineString): CalculationResponse {
+    const totalDistanceMeters = this.calculateTotalDistanceMeters(
+      geometry.coordinates,
+    );
+
+    if (!Number.isFinite(totalDistanceMeters) || totalDistanceMeters <= 0) {
+      throw new Error(
+        'No fue posible calcular métricas locales: distancia inválida',
+      );
+    }
+
+    const distance_km = totalDistanceMeters / 1000;
+    const averageSpeedKmH = this.getAverageSpeedByProfile();
+
+    const est_time_min =
+      averageSpeedKmH > 0 ? (distance_km / averageSpeedKmH) * 60 : 0;
+
+    return {
+      distance_km,
+      est_time_min,
+    };
+  }
+
+  private calculateTotalDistanceMeters(coordinates: number[][]): number {
+    let total = 0;
+
+    for (let i = 1; i < coordinates.length; i++) {
+      const [prevLng, prevLat] = coordinates[i - 1];
+      const [currLng, currLat] = coordinates[i];
+
+      if (
+        prevLng === undefined ||
+        prevLat === undefined ||
+        currLng === undefined ||
+        currLat === undefined
+      ) {
+        continue;
+      }
+
+      total += this.haversineDistance(prevLat, prevLng, currLat, currLng);
+    }
+
+    return total;
+  }
+
+  private haversineDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+    const earthRadiusMeters = 6371000;
+
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadiusMeters * c;
+  }
+
+  private getAverageSpeedByProfile(): number {
+    switch (this.profile) {
+      case 'cycling':
+      case 'bike':
+      case 'bicycle':
+        return 15; // km/h promedio para ciclismo
+      case 'driving':
+      case 'car':
+        return 45; // km/h promedio urbano
+      case 'walking':
+      default:
+        return 5; // km/h promedio caminando
+    }
   }
 }

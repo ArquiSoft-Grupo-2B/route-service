@@ -15,7 +15,7 @@ export class CreateRouteUseCase {
     private readonly calculationService: RouteCalculationService,
   ) {}
 
-  async execute(data: CreateRouteData, creatorId: string): Promise<Route> { 
+  async execute(data: CreateRouteData, creatorId: string): Promise<Route> {
     // Validación de autorización
     if (!creatorId || creatorId.trim() === '') {
       throw new BadRequestException('Creator ID (Firebase UID) es requerido');
@@ -42,10 +42,11 @@ export class CreateRouteUseCase {
       // Calcular distancia y tiempo usando el Servicio de Cálculo C++
       let calculatedDistance = data.distance_km;
       let calculatedTime = data.est_time_min;
-      
+
       if (data.geometry) {
-        const metrics = await this.calculationService.calculateRouteMetrics(data.geometry);
-        console.log(metrics)
+        const metrics = await this.calculationService.calculateRouteMetrics(
+          data.geometry,
+        );
         calculatedDistance = metrics.distance_km;
         calculatedTime = metrics.est_time_min;
       }
@@ -54,12 +55,21 @@ export class CreateRouteUseCase {
       const routeData: CreateRouteData = {
         ...data,
         creator_id: creatorId,
-        distance_km: calculatedDistance,
-        est_time_min: calculatedTime,
+        distance_km:
+          calculatedDistance != null && !Number.isNaN(calculatedDistance)
+            ? calculatedDistance
+            : undefined,
+        est_time_min:
+          calculatedTime != null && !Number.isNaN(calculatedTime)
+            ? Math.max(0, Math.round(calculatedTime))
+            : data.est_time_min != null && !Number.isNaN(data.est_time_min)
+              ? Math.max(0, Math.round(data.est_time_min))
+              : undefined,
       };
 
       return await this.routeRepository.create(routeData);
     } catch (error) {
+      console.log(error);
       throw new BadRequestException('Error al crear la ruta: ' + error.message);
     }
   }
