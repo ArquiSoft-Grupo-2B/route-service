@@ -19,6 +19,7 @@ import { GetDirectionsToRouteStartUseCase } from './application/use-cases/get-di
 // Infrastructure
 import { RouteRepositoryImpl } from './infrastructure/persistence/route.repository.impl';
 import { RouteCalculationService } from './infrastructure/services/route-calculation.service';
+import { RouteOwnerGuard } from '../common/guards/route-owner.guard';
 
 // Presentation
 import { RoutesController } from './presentation/routes.controller';
@@ -41,6 +42,7 @@ import { RoutesController } from './presentation/routes.controller';
     GetRoutesByRatingUseCase,
     FindNearbyRoutesUseCase,
     GetDirectionsToRouteStartUseCase,
+    RouteOwnerGuard,
   ],
   exports: [
     CreateRouteUseCase,
