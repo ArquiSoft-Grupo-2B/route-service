@@ -6,6 +6,7 @@ import {
   NotFoundException,
   BadRequestException,
   Inject,
+  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 import type { RouteRepository } from '../../routes/domain/repositories/route.repository';
@@ -13,6 +14,8 @@ import { ROUTE_REPOSITORY_TOKEN } from '../../routes/domain/repositories/route.r
 
 @Injectable()
 export class RouteOwnerGuard implements CanActivate {
+  private readonly logger = new Logger(RouteOwnerGuard.name);
+
   constructor(
     @Inject(ROUTE_REPOSITORY_TOKEN)
     private readonly routeRepository: RouteRepository,
@@ -23,28 +26,42 @@ export class RouteOwnerGuard implements CanActivate {
     
     // Verificar que el usuario esté autenticado (debe ejecutarse después de AuthServiceGuard)
     if (!request.user || !request.user.uid) {
+      this.logger.error('Usuario no autenticado en RouteOwnerGuard');
       throw new BadRequestException('Usuario no autenticado. Aplique AuthServiceGuard primero');
     }
 
     // Obtener el ID de la ruta desde los parámetros
     const routeId = request.params.id;
     if (!routeId) {
+      this.logger.error('ID de ruta no proporcionado');
       throw new BadRequestException('ID de ruta requerido en los parámetros');
     }
+
+    const userId = request.user.uid;
+    const userEmail = request.user.userInfo?.email || request.user.email || 'unknown';
 
     try {
       // Buscar la ruta en el repositorio
       const route = await this.routeRepository.findById(routeId);
       
       if (!route) {
+        this.logger.warn(`Ruta no encontrada: ${routeId}, solicitada por usuario: ${userId}`);
         throw new NotFoundException(`Ruta con ID ${routeId} no encontrada`);
       }
 
       // Verificar que el usuario sea el propietario de la ruta
-      if (route.creator_id !== request.user.uid) {
+      if (route.creator_id !== userId) {
+        this.logger.warn(
+          `Acceso denegado - Usuario: ${userId} (${userEmail}) intentó acceder a ruta: ${routeId} ` +
+          `que pertenece a: ${route.creator_id}`
+        );
         throw new ForbiddenException('No tienes permisos para acceder a esta ruta');
       }
 
+      this.logger.debug(
+        `Acceso autorizado - Usuario: ${userId} (${userEmail}) accedió a su ruta: ${routeId}`
+      );
+      
       return true;
     } catch (error) {
       // Re-lanzar errores conocidos
@@ -55,7 +72,8 @@ export class RouteOwnerGuard implements CanActivate {
       }
       
       // Error inesperado del repositorio
-      throw new BadRequestException('Error al verificar propiedad de la ruta: ' + error.message);
+      this.logger.error(`Error inesperado al verificar propiedad de ruta ${routeId}:`, error);
+      throw new BadRequestException('Error al verificar propiedad de la ruta');
     }
   }
 }
