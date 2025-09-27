@@ -11,12 +11,32 @@ import {
   HttpStatus,
   HttpCode,
   BadRequestException,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse as SwaggerResponse, 
+  ApiParam,
+  ApiBearerAuth,
+  ApiHeader,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiNoContentResponse,
+} from '@nestjs/swagger';
 import { CreateRouteDto } from '../dto/create-route.dto';
 import { UpdateRouteDto } from '../dto/update-route.dto';
 import { FindNearbyRoutesDto } from '../dto/find-nearby-routes.dto';
+import { DirectionsQueryDto } from '../dto/directions-query.dto';
 import { ApiResponse } from '../../../types/ApiResponse';
 import { RouteMapper } from '../infrastructure/mappers/route.mapper';
+import { AuthServiceGuard } from '../../common/guards/auth-service.guard';
+import { RouteOwnerGuard } from '../../common/guards/route-owner.guard';
 
 // Use Cases
 import { CreateRouteUseCase } from '../application/use-cases/create-route.usecase';
@@ -27,7 +47,9 @@ import { DeleteRouteUseCase } from '../application/use-cases/delete-route.usecas
 import { GetRoutesByCreatorUseCase } from '../application/use-cases/get-routes-by-creator.usecase';
 import { GetRoutesByRatingUseCase } from '../application/use-cases/get-routes-by-rating.usecase';
 import { FindNearbyRoutesUseCase } from '../application/use-cases/find-nearby-routes.usecase';
+import { GetDirectionsToRouteStartUseCase } from '../application/use-cases/get-directions-to-route-start.usecase';
 
+@ApiTags('routes')
 @Controller('routes')
 export class RoutesController {
   constructor(
@@ -39,19 +61,46 @@ export class RoutesController {
     private readonly getRoutesByCreatorUseCase: GetRoutesByCreatorUseCase,
     private readonly getRoutesByRatingUseCase: GetRoutesByRatingUseCase,
     private readonly findNearbyRoutesUseCase: FindNearbyRoutesUseCase,
+    private readonly getDirectionsToRouteStartUseCase: GetDirectionsToRouteStartUseCase,
   ) {}
 
+  @ApiOperation({
+    summary: 'Crear nueva ruta',
+    description: 'Crea una nueva ruta geoespacial. Requiere autenticación con Firebase.',
+  })
+  @ApiCreatedResponse({
+    description: 'Ruta creada exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Ruta creada exitosamente',
+        data: {
+          id: 'uuid-123',
+          creator_id: 'firebase-uid-123',
+          name: 'Ruta del Parque Central',
+          distance_km: 5.2,
+          est_time_min: 45,
+          avg_rating: null,
+          geometry: { type: 'LineString', coordinates: [] },
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        statusCode: 201
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos o falta header de usuario' })
+  @ApiUnauthorizedResponse({ description: 'Token de autenticación inválido o faltante' })
+  @ApiBearerAuth('auth-service-jwt')
+  @UseGuards(AuthServiceGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createRouteDto: CreateRouteDto,
-    @Headers('x-user-id') userId?: string,
+    @Request() request: any,
   ): Promise<ApiResponse> {
     try {
-      // Validar que el usuario esté autenticado
-      if (!userId) {
-        throw new BadRequestException('Header x-user-id es requerido (Firebase UID)');
-      }
+      const userId = request.user.uid;
 
       const routeData = RouteMapper.fromCreateDtoToDomain(createRouteDto);
       const route = await this.createRouteUseCase.execute(routeData, userId);
@@ -188,17 +237,16 @@ export class RoutesController {
     }
   }
 
+  @ApiBearerAuth('auth-service-jwt')
+  @UseGuards(AuthServiceGuard, RouteOwnerGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body() updateRouteDto: UpdateRouteDto,
-    @Headers('x-user-id') userId?: string,
+    @Request() request: any,
   ): Promise<ApiResponse> {
     try {
-      // Validar que el usuario esté autenticado
-      if (!userId) {
-        throw new BadRequestException('Header x-user-id es requerido para autorización');
-      }
+      const userId = request.user.uid;
 
       const routeData = RouteMapper.fromUpdateDtoToDomain(updateRouteDto);
       const route = await this.updateRouteUseCase.execute(id, routeData, userId);
@@ -218,17 +266,16 @@ export class RoutesController {
     }
   }
 
+  @ApiBearerAuth('auth-service-jwt')
+  @UseGuards(AuthServiceGuard, RouteOwnerGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id') id: string,
-    @Headers('x-user-id') userId?: string,
+    @Request() request: any,
   ): Promise<ApiResponse> {
     try {
-      // Validar que el usuario esté autenticado
-      if (!userId) {
-        throw new BadRequestException('Header x-user-id es requerido para autorización');
-      }
+      const userId = request.user.uid;
 
       await this.deleteRouteUseCase.execute(id, userId);
 
@@ -242,6 +289,62 @@ export class RoutesController {
         success: false,
         message: error.message,
         statusCode: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      };
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Obtener indicaciones hacia el inicio de una ruta',
+    description: 'Calcula la ruta peatonal desde la ubicación actual hasta el punto de inicio de una ruta específica usando el Servicio de Cálculo C++.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID único de la ruta',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiOkResponse({
+    description: 'Indicaciones calculadas exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Indicaciones calculadas exitosamente',
+        data: {
+          type: 'LineString',
+          coordinates: [
+            [-74.0817, 4.6097],
+            [-74.0820, 4.6100],
+            [-74.0825, 4.6105]
+          ]
+        },
+        statusCode: 200
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Parámetros inválidos' })
+  @ApiNotFoundResponse({ description: 'Ruta no encontrada' })
+  @Get(':id/directions')
+  async getDirectionsToStart(
+    @Param('id') routeId: string,
+    @Query() query: DirectionsQueryDto,
+  ): Promise<ApiResponse> {
+    try {
+      const directions = await this.getDirectionsToRouteStartUseCase.execute({
+        routeId,
+        fromLat: query.fromLat,
+        fromLng: query.fromLng,
+      });
+
+      return {
+        success: true,
+        message: 'Indicaciones calculadas exitosamente',
+        data: directions,
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+        statusCode: error.status || HttpStatus.BAD_REQUEST,
       };
     }
   }
