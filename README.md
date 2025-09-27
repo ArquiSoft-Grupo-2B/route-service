@@ -79,6 +79,7 @@ npm run test:cov       # Coverage
 ## 📡 Endpoints Disponibles
 
 ### Públicos (sin autenticación)
+
 - `GET /routes` - Obtener todas las rutas
 - `GET /routes/near?lat=X&lng=Y&radius_m=Z` - Buscar rutas cercanas
 - `GET /routes/:id` - Obtener ruta por ID
@@ -86,11 +87,13 @@ npm run test:cov       # Coverage
 - `GET /routes/rating?min=X&max=Y` - Filtrar por calificación
 
 ### Protegidos (requieren JWT)
+
 - `POST /routes` - Crear nueva ruta
 - `PATCH /routes/:id` - Actualizar ruta (solo propietario)
 - `DELETE /routes/:id` - Eliminar ruta (solo propietario)
 
 ### Funcionalidades especiales
+
 - `GET /routes/:id/directions?fromLat=X&fromLng=Y` - Indicaciones al inicio de ruta
 
 > 📖 **Documentación interactiva completa disponible en Swagger**: http://localhost:3000/api
@@ -111,8 +114,6 @@ src/
 └── main.ts
 ```
 
-
-
 ## ⚙️ Variables de Entorno
 
 ```bash
@@ -128,6 +129,7 @@ DB_NAME=routes_db
 PORT=3000
 
 # Microservicios (requeridos)
+# Ajusta CALCULATION_SERVICE_URL al host/puerto donde expongas OSRM
 CALCULATION_SERVICE_URL=http://localhost:8080
 AUTH_SERVICE_JWT_SECRET=tu_secreto_compartido_con_auth_service
 ```
@@ -137,18 +139,18 @@ AUTH_SERVICE_JWT_SECRET=tu_secreto_compartido_con_auth_service
 Este servicio **requiere** otros servicios para funcionar completamente:
 
 ### 🛡️ Servicio de Autenticación
+
 - **Debe estar corriendo** para endpoints protegidos
 - **Genera JWT** que este servicio valida
 - **Secret compartido** debe coincidir
 
 ### ⚡ Servicio de Cálculo (C++)
-- **Puerto 8080** por defecto
+
+- **Puerto configurable vía** `CALCULATION_SERVICE_URL` (por defecto `http://localhost:8080`)
 - **POST /calculate** - Calcula distancia/tiempo de rutas
 - **POST /directions** - Genera indicaciones peatonales
 
 > ⚠️ **Sin estos servicios**, las funciones de autenticación y cálculo precisos no funcionarán.
-
-
 
 ## 📚 Documentación Adicional
 
