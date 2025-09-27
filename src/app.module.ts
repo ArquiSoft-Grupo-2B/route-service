@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DataSourceConfig } from './config/data.source';
 import { RoutesModule } from './routes/routes.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RoutesModule } from './routes/routes.module';
       isGlobal: true,
     }),
     TypeOrmModule.forRoot(DataSourceConfig),
+    CommonModule,
     RoutesModule,
   ],
   controllers: [AppController],
