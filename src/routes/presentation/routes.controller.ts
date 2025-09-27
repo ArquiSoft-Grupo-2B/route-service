@@ -229,6 +229,63 @@ export class RoutesController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Encontrar rutas cercanas',
+    description:
+      'Busca rutas dentro de un radio en metros a partir de una latitud/longitud, devolviendo un FeatureCollection GeoJSON ordenado por distancia.',
+  })
+  @ApiOkResponse({
+    description: 'Rutas cercanas obtenidas exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Se encontraron 2 rutas cercanas en un radio de 5000 metros',
+        data: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [-74.08581, 4.63692],
+                  [-74.05, 4.63],
+                  [-74.02, 4.64],
+                ],
+              },
+              properties: {
+                id: 'ruta-1',
+                distancia: '5.2 km',
+                duracion: '15 min',
+                nombre: 'Ruta Parque Simón Bolívar',
+              },
+            },
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [-74.1, 4.61],
+                  [-74.08, 4.62],
+                  [-74.06, 4.615],
+                ],
+              },
+              properties: {
+                id: 'ruta-2',
+                distancia: '3.8 km',
+                duracion: '10 min',
+                nombre: 'Ruta Parque Nacional',
+              },
+            },
+          ],
+        },
+        statusCode: 200,
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Parámetros inválidos o error al ejecutar la búsqueda',
+  })
   @Get('near')
   async findNearbyRoutes(
     @Query() findNearbyDto: FindNearbyRoutesDto,
