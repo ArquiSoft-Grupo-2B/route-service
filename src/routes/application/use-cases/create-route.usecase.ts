@@ -5,12 +5,14 @@ import type {
 } from '../../domain/repositories/route.repository';
 import { Route } from '../../domain/entities/route.entity';
 import { ROUTE_REPOSITORY_TOKEN } from '../../domain/repositories/route.repository.token';
+import { RouteCalculationService } from '../../infrastructure/services/route-calculation.service';
 
 @Injectable()
 export class CreateRouteUseCase {
   constructor(
     @Inject(ROUTE_REPOSITORY_TOKEN)
     private readonly routeRepository: RouteRepository,
+    private readonly calculationService: RouteCalculationService,
   ) {}
 
   async execute(data: CreateRouteData, creatorId: string): Promise<Route> { 
@@ -37,10 +39,22 @@ export class CreateRouteUseCase {
     }
 
     try {
-      // Asignar el creator_id desde el parámetro
+      // Calcular distancia y tiempo usando el Servicio de Cálculo C++
+      let calculatedDistance = data.distance_km;
+      let calculatedTime = data.est_time_min;
+      
+      if (data.geometry) {
+        const metrics = await this.calculationService.calculateRouteMetrics(data.geometry);
+        calculatedDistance = metrics.distance_km;
+        calculatedTime = metrics.est_time_min;
+      }
+
+      // Asignar el creator_id y métricas calculadas
       const routeData: CreateRouteData = {
         ...data,
         creator_id: creatorId,
+        distance_km: calculatedDistance,
+        est_time_min: calculatedTime,
       };
 
       return await this.routeRepository.create(routeData);
