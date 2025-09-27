@@ -1,8 +1,8 @@
 
 services:
-  # Base de datos PostgreSQL
+  # Base de datos PostgreSQL con PostGIS
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.3-alpine
     container_name: routes_postgres
     restart: unless-stopped
     environment:
@@ -30,6 +30,9 @@ services:
       DB_PASSWORD: routes_password
       DB_NAME: routes_db
       PORT: 3000
+      # Nuevas variables para microservicios
+      CALCULATION_SERVICE_URL: http://host.docker.internal:8080
+      AUTH_SERVICE_JWT_SECRET: tu_secreto_compartido_con_auth_service
     ports:
       - '3000:3000'
     depends_on:
