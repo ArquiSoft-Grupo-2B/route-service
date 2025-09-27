@@ -45,6 +45,7 @@ export class CreateRouteUseCase {
       
       if (data.geometry) {
         const metrics = await this.calculationService.calculateRouteMetrics(data.geometry);
+        console.log(metrics)
         calculatedDistance = metrics.distance_km;
         calculatedTime = metrics.est_time_min;
       }

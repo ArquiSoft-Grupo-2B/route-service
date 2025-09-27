@@ -1,4 +1,4 @@
-import { Route } from '../../domain/entities/route.entity';
+import { Route, LineString } from '../../domain/entities/route.entity';
 import { CreateRouteDto } from '../../dto/create-route.dto';
 import { UpdateRouteDto } from '../../dto/update-route.dto';
 import {
@@ -44,5 +44,41 @@ export class RouteMapper {
 
   static toResponseList(routes: Route[]) {
     return routes.map((route) => this.toResponse(route));
+  }
+
+  static toGeoJsonFeatureCollection(routes: Route[]) {
+    return {
+      type: 'FeatureCollection',
+      features: routes.map((route) => this.toGeoJsonFeature(route)),
+    };
+  }
+
+  private static toGeoJsonFeature(route: Route) {
+    const geometry: LineString = route.geometry ?? {
+      type: 'LineString',
+      coordinates: [],
+    };
+
+    const distanceKm =
+      route.distance_km != null ? Number(route.distance_km) : null;
+    const estTimeMin =
+      route.est_time_min != null ? Number(route.est_time_min) : null;
+
+    return {
+      type: 'Feature',
+      geometry,
+      properties: {
+        id: route.id,
+        distancia:
+          distanceKm != null && !Number.isNaN(distanceKm)
+            ? `${distanceKm.toFixed(1)} km`
+            : undefined,
+        duracion:
+          estTimeMin != null && !Number.isNaN(estTimeMin)
+            ? `${estTimeMin} min`
+            : undefined,
+        nombre: route.name,
+      },
+    };
   }
 }
