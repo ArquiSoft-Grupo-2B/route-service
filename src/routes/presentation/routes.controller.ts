@@ -14,10 +14,10 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse as SwaggerResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse as SwaggerResponse,
   ApiParam,
   ApiBearerAuth,
   ApiHeader,
@@ -66,7 +66,8 @@ export class RoutesController {
 
   @ApiOperation({
     summary: 'Crear nueva ruta',
-    description: 'Crea una nueva ruta geoespacial. Requiere autenticación con Firebase.',
+    description:
+      'Crea una nueva ruta geoespacial. Requiere autenticación con Firebase.',
   })
   @ApiCreatedResponse({
     description: 'Ruta creada exitosamente',
@@ -83,14 +84,18 @@ export class RoutesController {
           avg_rating: null,
           geometry: { type: 'LineString', coordinates: [] },
           created_at: '2024-01-15T10:00:00Z',
-          updated_at: '2024-01-15T10:00:00Z'
+          updated_at: '2024-01-15T10:00:00Z',
         },
-        statusCode: 201
-      }
-    }
+        statusCode: 201,
+      },
+    },
   })
-  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos o falta header de usuario' })
-  @ApiUnauthorizedResponse({ description: 'Token de autenticación inválido o faltante' })
+  @ApiBadRequestResponse({
+    description: 'Datos de entrada inválidos o falta header de usuario',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token de autenticación inválido o faltante',
+  })
   @ApiBearerAuth('auth-service-jwt')
   @UseGuards(AuthServiceGuard)
   @Post()
@@ -100,6 +105,7 @@ export class RoutesController {
     @Request() request: any,
   ): Promise<ApiResponse> {
     try {
+      // user guardado en la request luego de validar
       const userId = request.user.uid;
 
       const routeData = RouteMapper.fromCreateDtoToDomain(createRouteDto);
@@ -122,7 +128,8 @@ export class RoutesController {
 
   @ApiOperation({
     summary: 'Obtener todas las rutas',
-    description: 'Obtiene la lista completa de rutas. Opcionalmente incluye información del creador.',
+    description:
+      'Obtiene la lista completa de rutas. Opcionalmente incluye información del creador.',
   })
   @ApiOkResponse({
     description: 'Rutas obtenidas exitosamente',
@@ -141,13 +148,13 @@ export class RoutesController {
             creator: {
               id: 'firebase-uid-123',
               alias: 'JohnRunner',
-              email: 'john@***'
-            }
-          }
+              email: 'john@***',
+            },
+          },
         ],
-        statusCode: 200
-      }
-    }
+        statusCode: 200,
+      },
+    },
   })
   @Get()
   async findAll(
@@ -159,7 +166,7 @@ export class RoutesController {
 
       return {
         success: true,
-        message: shouldIncludeCreator 
+        message: shouldIncludeCreator
           ? 'Rutas con información de creadores obtenidas exitosamente'
           : 'Rutas obtenidas exitosamente',
         data: RouteMapper.toResponseList(routes as any), // Cast temporal para el mapper
@@ -239,7 +246,7 @@ export class RoutesController {
       return {
         success: true,
         message: `Se encontraron ${routes.length} rutas cercanas en un radio de ${params.radius_m} metros`,
-        data: RouteMapper.toResponseList(routes),
+        data: RouteMapper.toGeoJsonFeatureCollection(routes),
         statusCode: HttpStatus.OK,
       };
     } catch (error) {
@@ -283,7 +290,11 @@ export class RoutesController {
       const userId = request.user.uid;
 
       const routeData = RouteMapper.fromUpdateDtoToDomain(updateRouteDto);
-      const route = await this.updateRouteUseCase.execute(id, routeData, userId);
+      const route = await this.updateRouteUseCase.execute(
+        id,
+        routeData,
+        userId,
+      );
 
       return {
         success: true,
@@ -329,12 +340,13 @@ export class RoutesController {
 
   @ApiOperation({
     summary: 'Obtener indicaciones hacia el inicio de una ruta',
-    description: 'Calcula la ruta peatonal desde la ubicación actual hasta el punto de inicio de una ruta específica usando el Servicio de Cálculo C++.',
+    description:
+      'Calcula la ruta peatonal desde la ubicación actual hasta el punto de inicio de una ruta específica usando el Servicio de Cálculo C++.',
   })
   @ApiParam({
     name: 'id',
     description: 'ID único de la ruta',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Indicaciones calculadas exitosamente',
@@ -346,13 +358,13 @@ export class RoutesController {
           type: 'LineString',
           coordinates: [
             [-74.0817, 4.6097],
-            [-74.0820, 4.6100],
-            [-74.0825, 4.6105]
-          ]
+            [-74.082, 4.61],
+            [-74.0825, 4.6105],
+          ],
         },
-        statusCode: 200
-      }
-    }
+        statusCode: 200,
+      },
+    },
   })
   @ApiBadRequestResponse({ description: 'Parámetros inválidos' })
   @ApiNotFoundResponse({ description: 'Ruta no encontrada' })
