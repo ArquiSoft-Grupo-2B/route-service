@@ -120,15 +120,49 @@ export class RoutesController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Obtener todas las rutas',
+    description: 'Obtiene la lista completa de rutas. Opcionalmente incluye información del creador.',
+  })
+  @ApiOkResponse({
+    description: 'Rutas obtenidas exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Rutas obtenidas exitosamente',
+        data: [
+          {
+            id: 'uuid-123',
+            creator_id: 'firebase-uid-123',
+            name: 'Ruta del Parque Central',
+            distance_km: 5.2,
+            est_time_min: 45,
+            avg_rating: 4.5,
+            creator: {
+              id: 'firebase-uid-123',
+              alias: 'JohnRunner',
+              email: 'john@***'
+            }
+          }
+        ],
+        statusCode: 200
+      }
+    }
+  })
   @Get()
-  async findAll(): Promise<ApiResponse> {
+  async findAll(
+    @Query('includeCreator') includeCreator?: string,
+  ): Promise<ApiResponse> {
     try {
-      const routes = await this.getRoutesUseCase.execute();
+      const shouldIncludeCreator = includeCreator === 'true';
+      const routes = await this.getRoutesUseCase.execute(shouldIncludeCreator);
 
       return {
         success: true,
-        message: 'Rutas obtenidas exitosamente',
-        data: RouteMapper.toResponseList(routes),
+        message: shouldIncludeCreator 
+          ? 'Rutas con información de creadores obtenidas exitosamente'
+          : 'Rutas obtenidas exitosamente',
+        data: RouteMapper.toResponseList(routes as any), // Cast temporal para el mapper
         statusCode: HttpStatus.OK,
       };
     } catch (error) {
