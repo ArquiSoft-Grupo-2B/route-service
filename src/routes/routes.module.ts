@@ -27,14 +27,11 @@ import { RoutesController } from './presentation/routes.controller';
   imports: [TypeOrmModule.forFeature([Route])],
   controllers: [RoutesController],
   providers: [
-    // Repository Implementation
     {
       provide: ROUTE_REPOSITORY_TOKEN,
       useClass: RouteRepositoryImpl,
     },
-    // Services
     RouteCalculationService,
-    // Use Cases
     CreateRouteUseCase,
     GetRoutesUseCase,
     GetRouteByIdUseCase,
