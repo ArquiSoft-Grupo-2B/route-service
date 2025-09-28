@@ -73,7 +73,7 @@ npm run test:cov       # Coverage
 ## 🌐 URLs Disponibles
 
 - **API**: http://localhost:3000
-- **Swagger Docs**: http://localhost:3000/api
+- **Swagger Docs**: http://localhost:3000/api/docs
 - **Adminer** (Admin DB): http://localhost:8080
 
 ## 📡 Endpoints Disponibles
@@ -116,23 +116,35 @@ src/
 
 ## ⚙️ Variables de Entorno
 
-```bash
-# Copia el archivo de ejemplo
-cp env.example .env.development
+1. Copia el archivo de ejemplo: `cp env.example .env.development`
+2. Ajusta los valores según tu entorno.
 
-# Configura las variables necesarias:
-DB_HOST=localhost
-DB_PORT=5433
-DB_USER=routes_user
-DB_PASSWORD=routes_password
-DB_NAME=routes_db
-PORT=3000
+| Variable                  | Obligatoria               | Descripción                                                          | Valor por defecto / ejemplo                  |
+| ------------------------- | ------------------------- | -------------------------------------------------------------------- | -------------------------------------------- |
+| `NODE_ENV`                | Opcional                  | Define el entorno activo y el archivo `.env` a cargar                | `development`                                |
+| `PORT`                    | Opcional                  | Puerto HTTP donde expone la API NestJS                               | `3000`                                       |
+| `FRONTEND_URL`            | Opcional                  | Origen permitido para CORS (UI/web)                                  | `http://localhost:3001`                      |
+| `DB_HOST`                 | Sí                        | Host de la base de datos PostgreSQL/PostGIS                          | `localhost` (dev) / `postgres` (Docker)      |
+| `DB_PORT`                 | Sí                        | Puerto de PostgreSQL                                                 | `5433` (dev) / `5432` (Docker)               |
+| `DB_USER`                 | Sí                        | Usuario de la base de datos                                          | `routes_user`                                |
+| `DB_PASSWORD`             | Sí                        | Contraseña del usuario                                               | `routes_password`                            |
+| `DB_NAME`                 | Sí                        | Nombre de la base de datos                                           | `routes_db`                                  |
+| `CALCULATION_SERVICE_URL` | Sí                        | URL base del servicio OSRM/C++ para métricas y direcciones           | `http://localhost:5002` (fallback en código) |
+| `OSRM_PROFILE`            | Opcional                  | Perfil de OSRM a utilizar (`walking`, `cycling`, `driving`, etc.)    | `walking`                                    |
+| `AUTH_SERVICE_URL`        | Sí (endpoints protegidos) | Endpoint GraphQL del servicio de autenticación                       | `http://localhost:8000/graphql`              |
+| `AUTH_SERVICE_JWT_SECRET` | Sí (prod/docker)          | Secreto compartido con el servicio de autenticación para validar JWT | `tu_secreto_compartido_con_auth_service`     |
 
-# Microservicios (requeridos)
-# Ajusta CALCULATION_SERVICE_URL al host/puerto donde expongas OSRM
-CALCULATION_SERVICE_URL=http://localhost:8080
-AUTH_SERVICE_JWT_SECRET=tu_secreto_compartido_con_auth_service
-```
+> 💡 Si `AUTH_SERVICE_URL` no está definido, los guards de autenticación lanzarán error y los endpoints protegidos fallarán.
+
+### Variables adicionales para Docker Compose
+
+Cuando se ejecuta con `docker-compose`, también puedes personalizar:
+
+| Variable            | Descripción                                       | Valor por defecto |
+| ------------------- | ------------------------------------------------- | ----------------- |
+| `POSTGRES_DB`       | Nombre de la base creada al iniciar el contenedor | `routes_db`       |
+| `POSTGRES_USER`     | Usuario inicial de PostgreSQL                     | `routes_user`     |
+| `POSTGRES_PASSWORD` | Contraseña del usuario inicial                    | `routes_password` |
 
 ## 🔌 Dependencias de Microservicios
 
