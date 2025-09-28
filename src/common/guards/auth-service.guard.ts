@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import * as jwt from 'jsonwebtoken';
 import { AuthServiceClient } from '../services/auth-service.client';
 import { UserType } from '../interfaces/auth-service.interface';
 import { randomUUID } from 'crypto';
@@ -26,59 +25,43 @@ declare global {
   }
 }
 
-interface JWTPayload {
-  uid: string;
-  email?: string;
-  email_verified?: boolean;
-  iat?: number;
-  exp?: number;
-}
-
 @Injectable()
 export class AuthServiceGuard implements CanActivate {
   private readonly logger = new Logger(AuthServiceGuard.name);
-  private readonly jwtSecret: string;
   private readonly isDevelopment: boolean;
 
   constructor(
-    private configService: ConfigService,
-    private authServiceClient: AuthServiceClient,
+    private readonly configService: ConfigService,
+    private readonly authServiceClient: AuthServiceClient,
   ) {
-    const nodeEnv = (
-      this.configService.get<string>('NODE_ENV') ||
-      process.env.NODE_ENV ||
-      ''
-    ).toLowerCase();
-    this.isDevelopment = nodeEnv === 'development';
+    const nodeEnv =
+      this.configService.get<string>('NODE_ENV')?.toLowerCase() ?? 'production';
 
-    this.jwtSecret = this.configService.get('AUTH_SERVICE_JWT_SECRET') || '';
-    if (!this.jwtSecret && !this.isDevelopment) {
-      throw new Error('AUTH_SERVICE_JWT_SECRET must be configured');
-    }
+    this.isDevelopment = nodeEnv === 'development';
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    if (this.isDevelopment) {
-      const devUid = randomUUID();
-      const devEmail = 'test@gmail.com';
+    // if (this.isDevelopment) {
+    //   const devUid = randomUUID();
+    //   const devEmail = 'test@gmail.com';
 
-      request.user = {
-        uid: devUid,
-        email: devEmail,
-        email_verified: true,
-        userInfo: {
-          id: devUid,
-          email: devEmail,
-          alias: 'Dev User',
-        },
-      };
+    //   request.user = {
+    //     uid: devUid,
+    //     email: devEmail,
+    //     email_verified: true,
+    //     userInfo: {
+    //       id: devUid,
+    //       email: devEmail,
+    //       alias: 'Dev User',
+    //     },
+    //   };
 
-      this.logger.warn(
-        'AuthServiceGuard en modo desarrollo: asignando usuario falso y omitiendo llamadas al servicio de autenticación.',
-      );
-      return true;
-    }
+    //   this.logger.warn(
+    //     'AuthServiceGuard en modo desarrollo: asignando usuario falso y omitiendo llamadas al servicio de autenticación.',
+    //   );
+    //   return true;
+    // }
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -93,33 +76,38 @@ export class AuthServiceGuard implements CanActivate {
 
     const token = authHeader.substring(7); // Remover 'Bearer '
 
+    const authServiceUrl = this.configService.get<string>('AUTH_SERVICE_URL');
+    if (!authServiceUrl) {
+      this.logger.error('AUTH_SERVICE_URL no está configurado');
+      throw new UnauthorizedException(
+        'Servicio de autenticación no disponible',
+      );
+    }
+
     try {
-      // Verificar el JWT del Servicio de Autenticación
-      const decoded = jwt.verify(token, this.jwtSecret) as JWTPayload;
+      const verification = await this.authServiceClient.verifyToken(token);
 
-      // Validar que el usuario existe en el Authentication Service
-      const userExists = await this.authServiceClient.validateUser(decoded.uid);
-
-      if (!userExists) {
-        this.logger.warn(
-          `Usuario con UID ${decoded.uid} no encontrado en Authentication Service`,
+      if (!verification) {
+        throw new UnauthorizedException(
+          'Token inválido o usuario no encontrado',
         );
-        throw new UnauthorizedException('Usuario no encontrado');
       }
 
-      // Obtener información completa del usuario desde el Authentication Service
-      const userInfo = await this.authServiceClient.getUserById(decoded.uid);
-
-      // Adjuntar información del usuario al request
       request.user = {
-        uid: decoded.uid,
-        email: decoded.email,
-        email_verified: decoded.email_verified,
-        userInfo: userInfo || undefined,
+        uid: verification.uid,
+        email: verification.email,
+        email_verified: verification.emailVerified,
+        userInfo: verification.userInfo
+          ? {
+              id: verification.userInfo.userId ?? verification.uid,
+              email: verification.email,
+              alias: verification.userInfo.name,
+            }
+          : undefined,
       };
 
       this.logger.debug(
-        `Usuario autenticado: ${decoded.uid} - ${decoded.email}`,
+        `Usuario autenticado: ${verification.uid} - ${verification.email}`,
       );
       return true;
     } catch (error) {
@@ -127,14 +115,8 @@ export class AuthServiceGuard implements CanActivate {
         throw error;
       }
 
-      if (error.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Token expirado');
-      } else if (error.name === 'JsonWebTokenError') {
-        throw new UnauthorizedException('Token inválido');
-      } else {
-        this.logger.error('Error al verificar token:', error);
-        throw new UnauthorizedException('Error al verificar autenticación');
-      }
+      this.logger.error('Error al verificar token vía GraphQL:', error);
+      throw new UnauthorizedException('Error al verificar autenticación');
     }
   }
 }

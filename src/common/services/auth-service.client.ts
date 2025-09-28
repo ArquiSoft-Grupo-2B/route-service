@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { GraphQLClient, gql } from 'graphql-request';
 import {
   UserType,
   TokenType,
@@ -11,16 +13,28 @@ import {
   UpdateUserResponse,
   SendPasswordResetResponse,
   DeleteUserResponse,
+  VerifyTokenResponse,
 } from '../interfaces/auth-service.interface';
 
 @Injectable()
 export class AuthServiceClient {
   private readonly logger = new Logger(AuthServiceClient.name);
-  private readonly authServiceUrl: string;
+  private readonly graphQLClient: GraphQLClient;
 
-  constructor() {
-    // TODO: Move to environment variables
-    this.authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8000/graphql';
+  constructor(private readonly configService: ConfigService) {
+    const nodeEnv =
+      this.configService.get<string>('NODE_ENV')?.toLowerCase() ?? 'production';
+    const isDevelopment = nodeEnv === 'development';
+
+    const authServiceUrl =
+      this.configService.get<string>('AUTH_SERVICE_URL') ||
+      (isDevelopment ? 'http://localhost:8000/graphql' : undefined);
+
+    if (!authServiceUrl) {
+      throw new Error('AUTH_SERVICE_URL debe estar configurado');
+    }
+
+    this.graphQLClient = new GraphQLClient(authServiceUrl);
   }
 
   private async executeQuery<T>(
@@ -28,30 +42,24 @@ export class AuthServiceClient {
     variables?: Record<string, any>,
   ): Promise<GraphQLResponse<T>> {
     try {
-      const response = await fetch(this.authServiceUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          variables: variables || {},
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await this.graphQLClient.request<T>(
+        query,
+        variables || {},
+      );
+      return { data: result };
+    } catch (error: any) {
+      if (error?.response?.errors) {
+        this.logger.error('Errores GraphQL:', error.response.errors);
+        return {
+          errors: error.response.errors.map((err: any) => ({
+            message: err.message,
+            locations: err.locations,
+            path: err.path,
+          })),
+        };
       }
 
-      const result: GraphQLResponse<T> = await response.json();
-      
-      if (result.errors && result.errors.length > 0) {
-        this.logger.error('GraphQL errors:', result.errors);
-      }
-
-      return result;
-    } catch (error) {
-      this.logger.error('Error executing GraphQL query:', error);
+      this.logger.error('Error ejecutando consulta GraphQL:', error);
       throw error;
     }
   }
@@ -109,7 +117,9 @@ export class AuthServiceClient {
       }
     `;
 
-    const result = await this.executeQuery<CreateUserResponse>(mutation, { userInput });
+    const result = await this.executeQuery<CreateUserResponse>(mutation, {
+      userInput,
+    });
     return result.data?.createUser || null;
   }
 
@@ -131,14 +141,20 @@ export class AuthServiceClient {
       }
     `;
 
-    const result = await this.executeQuery<LoginUserResponse>(mutation, { email, password });
+    const result = await this.executeQuery<LoginUserResponse>(mutation, {
+      email,
+      password,
+    });
     return result.data?.loginUser || null;
   }
 
   /**
    * Actualiza un usuario
    */
-  async updateUser(userId: string, userInput: UserInput): Promise<UserType | null> {
+  async updateUser(
+    userId: string,
+    userInput: UserInput,
+  ): Promise<UserType | null> {
     const mutation = `
       mutation UpdateUser($userId: String!, $userInput: UserInput!) {
         updateUser(userId: $userId, userInput: $userInput) {
@@ -150,14 +166,19 @@ export class AuthServiceClient {
       }
     `;
 
-    const result = await this.executeQuery<UpdateUserResponse>(mutation, { userId, userInput });
+    const result = await this.executeQuery<UpdateUserResponse>(mutation, {
+      userId,
+      userInput,
+    });
     return result.data?.updateUser || null;
   }
 
   /**
    * Envía email de reseteo de contraseña
    */
-  async sendPasswordResetEmail(email: string): Promise<{ success: boolean; response: string }> {
+  async sendPasswordResetEmail(
+    email: string,
+  ): Promise<{ success: boolean; response: string }> {
     const mutation = `
       mutation SendPasswordResetEmail($email: String!) {
         sendPasswordResetEmail(email: $email) {
@@ -167,8 +188,16 @@ export class AuthServiceClient {
       }
     `;
 
-    const result = await this.executeQuery<SendPasswordResetResponse>(mutation, { email });
-    return result.data?.sendPasswordResetEmail || { success: false, response: 'Error' };
+    const result = await this.executeQuery<SendPasswordResetResponse>(
+      mutation,
+      { email },
+    );
+    return (
+      result.data?.sendPasswordResetEmail || {
+        success: false,
+        response: 'Error',
+      }
+    );
   }
 
   /**
@@ -181,7 +210,9 @@ export class AuthServiceClient {
       }
     `;
 
-    const result = await this.executeQuery<DeleteUserResponse>(mutation, { userId });
+    const result = await this.executeQuery<DeleteUserResponse>(mutation, {
+      userId,
+    });
     return result.data?.deleteUser || false;
   }
 
@@ -197,5 +228,28 @@ export class AuthServiceClient {
       this.logger.error(`Error validating user ${userId}:`, error);
       return false;
     }
+  }
+
+  async verifyToken(
+    idToken: string,
+  ): Promise<VerifyTokenResponse['verifyToken'] | null> {
+    const mutation = gql`
+      mutation VerifyToken($idToken: String!) {
+        verifyToken(idToken: $idToken) {
+          uid
+          email
+          emailVerified
+          userInfo {
+            name
+            userId
+          }
+        }
+      }
+    `;
+
+    const result = await this.executeQuery<VerifyTokenResponse>(mutation, {
+      idToken,
+    });
+    return result.data?.verifyToken || null;
   }
 }

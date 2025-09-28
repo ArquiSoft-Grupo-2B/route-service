@@ -4,17 +4,17 @@ export interface UserType {
   id: string;
   email: string;
   alias?: string;
-  photo_url?: string;
+  photoUrl?: string;
 }
 
 export interface TokenType {
-  local_id: string;
+  localId: string;
   email: string;
   alias: string;
-  id_token: string;
+  idToken: string;
   registered: boolean;
-  refresh_token: string;
-  expires_in: string;
+  refreshToken: string;
+  expiresIn: string;
 }
 
 export interface UserInput {
@@ -65,4 +65,16 @@ export interface SendPasswordResetResponse {
 
 export interface DeleteUserResponse {
   deleteUser: boolean;
+}
+
+export interface VerifyTokenResponse {
+  verifyToken: {
+    uid: string;
+    email: string;
+    emailVerified: boolean;
+    userInfo?: {
+      name?: string;
+      userId?: string;
+    } | null;
+  };
 }
