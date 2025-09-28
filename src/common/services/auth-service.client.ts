@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GraphQLClient, gql } from 'graphql-request';
+type GraphQLClient = import('graphql-request').GraphQLClient;
 import {
   UserType,
   TokenType,
@@ -19,7 +19,7 @@ import {
 @Injectable()
 export class AuthServiceClient {
   private readonly logger = new Logger(AuthServiceClient.name);
-  private readonly graphQLClient: GraphQLClient;
+  private readonly graphQLClientPromise: Promise<GraphQLClient>;
 
   constructor(private readonly configService: ConfigService) {
     const nodeEnv =
@@ -34,7 +34,10 @@ export class AuthServiceClient {
       throw new Error('AUTH_SERVICE_URL debe estar configurado');
     }
 
-    this.graphQLClient = new GraphQLClient(authServiceUrl);
+    this.graphQLClientPromise = import('graphql-request').then(
+      ({ GraphQLClient: GraphQLClientCtor }) =>
+        new GraphQLClientCtor(authServiceUrl),
+    );
   }
 
   private async executeQuery<T>(
@@ -42,10 +45,8 @@ export class AuthServiceClient {
     variables?: Record<string, any>,
   ): Promise<GraphQLResponse<T>> {
     try {
-      const result = await this.graphQLClient.request<T>(
-        query,
-        variables || {},
-      );
+      const client = await this.graphQLClientPromise;
+      const result = await client.request<T>(query, variables || {});
       return { data: result };
     } catch (error: any) {
       if (error?.response?.errors) {
@@ -233,7 +234,7 @@ export class AuthServiceClient {
   async verifyToken(
     idToken: string,
   ): Promise<VerifyTokenResponse['verifyToken'] | null> {
-    const mutation = gql`
+    const mutation = `
       mutation VerifyToken($idToken: String!) {
         verifyToken(idToken: $idToken) {
           uid
