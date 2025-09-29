@@ -21,8 +21,11 @@ services:
     build: .
     container_name: routes_app
     restart: unless-stopped
+    env_file:
+      - .env.${APP_ENV:-development}
     environment:
       NODE_ENV: ${NODE_ENV:-development}
+      APP_ENV: ${APP_ENV:-development}
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
       DB_USER: ${DB_USER:-routes_user}
@@ -30,8 +33,9 @@ services:
       DB_NAME: ${DB_NAME:-routes_db}
       PORT: ${PORT:-3000}
       # Nuevas variables para microservicios
-      CALCULATION_SERVICE_URL: ${CALCULATION_SERVICE_URL:-http://host.docker.internal:8080}
-      AUTH_SERVICE_JWT_SECRET: ${AUTH_SERVICE_JWT_SECRET:-tu_secreto_compartido_con_auth_service}
+      CALCULATION_SERVICE_URL: ${CALCULATION_SERVICE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      AUTH_SERVICE_JWT_SECRET: ${AUTH_SERVICE_JWT_SECRET}
     ports:
       - '3000:3000'
     depends_on:
@@ -58,4 +62,5 @@ volumes:
 
 networks:
   routes_network:
-    driver: bridge
+    external: true
+    name: routes_shared_network

@@ -33,4 +33,5 @@ volumes:
 
 networks:
   routes_dev_network:
-    driver: bridge
+    external: true
+    name: routes_shared_network
