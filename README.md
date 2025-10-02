@@ -42,6 +42,12 @@ Usuario: routes_user
 Contraseña: routes_password
 ```
 
+### 🌱 Datos de Seed
+
+Al levantar el contenedor de Docker por primera vez, se cargan automáticamente **8 rutas predefinidas** en la base de datos, ubicadas en Bogotá, Colombia. Estas rutas están listas para probar las funcionalidades de la API sin necesidad de crear datos manualmente.
+
+> 📖 Ver más detalles en [`SEED_DATA.md`](./SEED_DATA.md)
+
 ## 🔧 Scripts Disponibles
 
 ### Desarrollo
