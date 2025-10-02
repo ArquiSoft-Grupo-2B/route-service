@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
-  # Base de datos PostgreSQL
+  # Base de datos PostgreSQL con PostGIS
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.3-alpine
     container_name: routes_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: routes_db
-      POSTGRES_USER: routes_user
-      POSTGRES_PASSWORD: routes_password
+      POSTGRES_DB: ${POSTGRES_DB:-routes_db}
+      POSTGRES_USER: ${POSTGRES_USER:-routes_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-routes_password}
     ports:
       - '5432:5432'
     volumes:
@@ -23,14 +21,21 @@ services:
     build: .
     container_name: routes_app
     restart: unless-stopped
+    env_file:
+      - .env.${APP_ENV:-development}
     environment:
-      NODE_ENV: development
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: routes_user
-      DB_PASSWORD: routes_password
-      DB_NAME: routes_db
-      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      APP_ENV: ${APP_ENV:-development}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-routes_user}
+      DB_PASSWORD: ${DB_PASSWORD:-routes_password}
+      DB_NAME: ${DB_NAME:-routes_db}
+      PORT: ${PORT:-3000}
+      # Nuevas variables para microservicios
+      CALCULATION_SERVICE_URL: ${CALCULATION_SERVICE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      AUTH_SERVICE_JWT_SECRET: ${AUTH_SERVICE_JWT_SECRET}
     ports:
       - '3000:3000'
     depends_on:
@@ -57,4 +62,5 @@ volumes:
 
 networks:
   routes_network:
-    driver: bridge
+    external: true
+    name: routes_shared_network
