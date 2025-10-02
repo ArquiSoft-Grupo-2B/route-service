@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 -- Verificar que las extensiones se crearon correctamente
 SELECT 'Base de datos inicializada correctamente con PostGIS' AS message;
 
--- Crear tabla routes (si no existe)
+-- Crear tabla routes si no existe
 CREATE TABLE IF NOT EXISTS routes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     creator_id TEXT NOT NULL,
@@ -21,11 +21,14 @@ CREATE TABLE IF NOT EXISTS routes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Crear índices
+-- Crear índices si no existen
 CREATE INDEX IF NOT EXISTS "IDX_routes_creator_id" ON "routes" ("creator_id");
 CREATE INDEX IF NOT EXISTS "IDX_routes_avg_rating" ON "routes" ("avg_rating");
 CREATE INDEX IF NOT EXISTS "IDX_routes_created_at" ON "routes" ("created_at");
 CREATE INDEX IF NOT EXISTS "IDX_routes_geometry" ON "routes" USING GIST ("geometry");
+
+-- Eliminar todas las rutas existentes de seed (por si acaso)
+DELETE FROM routes WHERE creator_id LIKE 'seed-user-%';
 
 -- Insertar rutas de seed
 -- Ruta 1: Ruta del Parque Central
