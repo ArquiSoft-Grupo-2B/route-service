@@ -46,3 +46,4 @@ export class Route {
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 }
+
