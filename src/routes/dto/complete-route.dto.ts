@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 /**
  * DTO para marcar una ruta como completada por un usuario
  */
-export class aCompleteRouteDto {
+export class CompleteRouteDto {
   @ApiProperty({
     description: 'Puntuación obtenida por el usuario al completar la ruta',
     example: 85.5,
