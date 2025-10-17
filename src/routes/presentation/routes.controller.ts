@@ -85,6 +85,8 @@ export class RoutesController {
           distance_km: 5.2,
           est_time_min: 45,
           avg_rating: null,
+          completed_count: 0,
+          score: 52,
           geometry: { type: 'LineString', coordinates: [] },
           created_at: '2024-01-15T10:00:00Z',
           updated_at: '2024-01-15T10:00:00Z',
@@ -148,6 +150,8 @@ export class RoutesController {
             distance_km: 5.2,
             est_time_min: 45,
             avg_rating: 4.5,
+            completed_count: 5,
+            score: 52,
             creator: {
               id: 'firebase-uid-123',
               alias: 'JohnRunner',
