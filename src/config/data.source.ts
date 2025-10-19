@@ -25,7 +25,7 @@ export const DataSourceConfig: DataSourceOptions = {
   database: configService.get('DB_NAME'),
   entities: [__dirname + '/../**/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../migrations/*{ .ts,.js}'],
-  synchronize: true,
+  synchronize: false,  // Cambiar a false para usar init.sql
   //   ssl: true,
   logging: false,
 };

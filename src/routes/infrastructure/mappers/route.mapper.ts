@@ -36,6 +36,8 @@ export class RouteMapper {
       distance_km: route.distance_km,
       est_time_min: route.est_time_min,
       avg_rating: route.avg_rating,
+      completed_count: route.completed_count ?? 0,
+      score: route.score ?? 0,
       geometry: route.geometry,
       created_at: route.created_at,
       updated_at: route.updated_at,
@@ -78,6 +80,8 @@ export class RouteMapper {
             ? `${estTimeMin} min`
             : undefined,
         nombre: route.name,
+        score: route.score ?? 0,
+        completed_count: route.completed_count ?? 0,
       },
     };
   }

@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-routes_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-routes_password}
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -36,6 +36,11 @@ services:
       CALCULATION_SERVICE_URL: ${CALCULATION_SERVICE_URL}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
       AUTH_SERVICE_JWT_SECRET: ${AUTH_SERVICE_JWT_SECRET}
+      # RabbitMQ Configuration
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbit:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-notification-exchange}
+      RABBITMQ_EXCHANGE_TYPE: ${RABBITMQ_EXCHANGE_TYPE:-direct}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-notification-routing-key}
     ports:
       - '3000:3000'
     depends_on:

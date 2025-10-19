@@ -47,6 +47,8 @@ export class RouteRepositoryImpl implements RouteRepository {
         'route.distance_km',
         'route.est_time_min',
         'route.avg_rating',
+        'route.completed_count',
+        'route.score',
         'route.geometry',
         'route.created_at',
         'route.updated_at'
