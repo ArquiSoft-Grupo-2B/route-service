@@ -503,7 +503,7 @@ export class RoutesController {
   @HttpCode(HttpStatus.OK)
   async completeRoute(
     @Param('id') routeId: string,
-    @Body() completeRouteDto: CompleteRouteDto,
+    @Body() completeRouteDto: aCompleteRouteDto,
     @Request() request: any,
   ): Promise<ApiResponse> {
     try {
