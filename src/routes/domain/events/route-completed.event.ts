@@ -1,9 +1,16 @@
 /**
+ * Enum que define los tipos de eventos del dominio de rutas
+ */
+export enum RouteEventType {
+  ROUTE_COMPLETED = 'ROUTE_COMPLETED',
+}
+
+/**
  * Evento de dominio que representa la finalización de una ruta por un usuario
  */
 export interface RouteCompletedEvent {
   /** Tipo de evento para distinguir entre diferentes tipos de eventos */
-  eventType: 'ROUTE_COMPLETED';
+  eventType: RouteEventType;
 
   /** ID único de la ruta */
   routeId: string;

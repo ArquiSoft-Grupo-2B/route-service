@@ -11,6 +11,7 @@ import type {
   RouteCompletedEvent,
   EventPublisher,
 } from '../../domain/events/route-completed.event';
+import { RouteEventType } from '../../domain/events/route-completed.event';
 
 /**
  * Parámetros para completar una ruta
@@ -18,7 +19,6 @@ import type {
 export interface CompleteRouteParams {
   routeId: string;
   userId: string;
-  score?: number;
   completed?: boolean;
   actualTimeMin?: number;
 }
@@ -47,7 +47,7 @@ export class CompleteRouteUseCase {
    * @returns El evento publicado
    */
   async execute(params: CompleteRouteParams): Promise<RouteCompletedEvent> {
-    const { routeId, userId, score, completed, actualTimeMin } = params;
+    const { routeId, userId, completed, actualTimeMin } = params;
 
     // Validaciones de entrada
     if (!routeId || routeId.trim() === '') {
@@ -76,13 +76,13 @@ export class CompleteRouteUseCase {
 
     // Construir el evento de dominio
     const event: RouteCompletedEvent = {
-      eventType: 'ROUTE_COMPLETED',
+      eventType: RouteEventType.ROUTE_COMPLETED,
       routeId: route.id,
       routeName: route.name,
       creatorId: route.creator_id,
       userId: userId,
       completed: completed ?? true,
-      score: route.score ?? 0, // Score de la ruta basado en distancia
+      score: route.score ?? 0,
       distanceKm: route.distance_km ? Number(route.distance_km) : undefined,
       estTimeMin: route.est_time_min ? Number(route.est_time_min) : undefined,
       actualTimeMin: actualTimeMin,

@@ -470,7 +470,8 @@ export class RoutesController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
-    description: 'Ruta marcada como completada exitosamente',
+    description:
+      'Ruta marcada como completada exitosamente. El evento publicado incluye eventType como enum RouteEventType',
     schema: {
       example: {
         success: true,
@@ -518,7 +519,6 @@ export class RoutesController {
       const event = await this.completeRouteUseCase.execute({
         routeId,
         userId,
-        score: completeRouteDto.score,
         completed: completeRouteDto.completed,
         actualTimeMin: completeRouteDto.actualTimeMin,
       });
