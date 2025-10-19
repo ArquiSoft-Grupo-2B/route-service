@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS routes (
     est_time_min INTEGER,
     avg_rating NUMERIC DEFAULT 0,
     geometry GEOGRAPHY(LineString, 4326),
+    completed_count INTEGER DEFAULT 0,
+    score INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,7 +34,7 @@ DELETE FROM routes WHERE creator_id LIKE 'seed-user-%';
 
 -- Insertar rutas de seed
 -- Ruta 1: Ruta del Parque Central
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-001',
@@ -41,12 +43,14 @@ VALUES (
     25,
     4.5,
     ST_GeogFromText('LINESTRING(-74.089138889 4.643611111, -74.090500000 4.642722222, -74.095250000 4.650055556, -74.092444444 4.652527778)'),
+    0,
+    25,
     NOW(),
     NOW()
 );
 
 -- Ruta 2: Ruta Norte
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-001',
@@ -55,12 +59,14 @@ VALUES (
     30,
     4.2,
     ST_GeogFromText('LINESTRING(-74.079166667 4.634472222, -74.068000000 4.632444444, -74.066527778 4.632083333, -74.066722222 4.630777778)'),
+    0,
+    32,
     NOW(),
     NOW()
 );
 
 -- Ruta 3: Ruta Corta Este
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-002',
@@ -69,12 +75,14 @@ VALUES (
     15,
     4.8,
     ST_GeogFromText('LINESTRING(-74.084111111 4.645472222, -74.082305556 4.652888889)'),
+    0,
+    15,
     NOW(),
     NOW()
 );
 
 -- Ruta 4: Ruta Triangular
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-002',
@@ -83,12 +91,14 @@ VALUES (
     20,
     4.0,
     ST_GeogFromText('LINESTRING(-74.083111111 4.644166667, -74.079333333 4.642722222, -74.079055556 4.646500000)'),
+    0,
+    20,
     NOW(),
     NOW()
 );
 
 -- Ruta 5: Ruta Larga Sur-Norte
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-003',
@@ -97,12 +107,14 @@ VALUES (
     55,
     4.7,
     ST_GeogFromText('LINESTRING(-74.064916667 4.628388889, -74.051138889 4.660027778)'),
+    0,
+    78,
     NOW(),
     NOW()
 );
 
 -- Ruta 6: Ruta Oeste Extendida
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-003',
@@ -111,12 +123,14 @@ VALUES (
     40,
     4.3,
     ST_GeogFromText('LINESTRING(-74.082777778 4.644305556, -74.086777778 4.647000000, -74.093250000 4.651527778, -74.100472222 4.656861111)'),
+    0,
+    43,
     NOW(),
     NOW()
 );
 
 -- Ruta 7: Ruta Sur Corta
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-004',
@@ -125,12 +139,14 @@ VALUES (
     12,
     3.9,
     ST_GeogFromText('LINESTRING(-74.066500000 4.601416667, -74.061472222 4.603694444)'),
+    0,
+    12,
     NOW(),
     NOW()
 );
 
 -- Ruta 8: Ruta Circular
-INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, created_at, updated_at)
+INSERT INTO routes (id, creator_id, name, distance_km, est_time_min, avg_rating, geometry, completed_count, score, created_at, updated_at)
 VALUES (
     uuid_generate_v4(),
     'seed-user-004',
@@ -139,6 +155,8 @@ VALUES (
     28,
     4.6,
     ST_GeogFromText('LINESTRING(-74.089000000 4.633861111, -74.092638889 4.630611111, -74.091027778 4.628166667, -74.085083333 4.632083333, -74.089027778 4.633722222)'),
+    0,
+    28,
     NOW(),
     NOW()
 );

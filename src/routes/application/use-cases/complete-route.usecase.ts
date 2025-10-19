@@ -65,6 +65,15 @@ export class CompleteRouteUseCase {
       throw new NotFoundException(`Ruta con ID ${routeId} no encontrada`);
     }
 
+    // Incrementar el contador de completados
+    const updatedCompletedCount = (route.completed_count || 0) + 1;
+    await this.routeRepository.update(routeId, {
+      completed_count: updatedCompletedCount,
+    });
+
+    // Actualizar el objeto route con el nuevo contador
+    route.completed_count = updatedCompletedCount;
+
     // Construir el evento de dominio
     const event: RouteCompletedEvent = {
       eventType: 'ROUTE_COMPLETED',
@@ -72,8 +81,8 @@ export class CompleteRouteUseCase {
       routeName: route.name,
       creatorId: route.creator_id,
       userId: userId,
-      completed: completed ?? true, // Por defecto true si no se especifica
-      score: score ?? 0, // Por defecto 0 si no se especifica (será implementado después)
+      completed: completed ?? true,
+      score: route.score ?? 0, // Score de la ruta basado en distancia
       distanceKm: route.distance_km ? Number(route.distance_km) : undefined,
       estTimeMin: route.est_time_min ? Number(route.est_time_min) : undefined,
       actualTimeMin: actualTimeMin,
@@ -82,7 +91,7 @@ export class CompleteRouteUseCase {
 
     this.logger.log(
       `Usuario ${userId} completó la ruta ${routeId} (${route.name}). ` +
-        `Score: ${event.score}, Tiempo real: ${actualTimeMin || 'N/A'} min`,
+        `Score: ${event.score}, Completadas: ${updatedCompletedCount}, Tiempo real: ${actualTimeMin || 'N/A'} min`,
     );
 
     // Publicar evento al sistema de mensajería

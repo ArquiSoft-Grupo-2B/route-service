@@ -20,6 +20,7 @@ import { CompleteRouteUseCase } from './application/use-cases/complete-route.use
 // Infrastructure
 import { RouteRepositoryImpl } from './infrastructure/persistence/route.repository.impl';
 import { RouteCalculationService } from './infrastructure/services/route-calculation.service';
+import { ScoreCalculationService } from './infrastructure/services/score-calculation.service';
 import { RabbitMQService } from './infrastructure/messaging/rabbitmq.service';
 import { RouteOwnerGuard } from '../common/guards/route-owner.guard';
 
@@ -39,6 +40,7 @@ import { RoutesController } from './presentation/routes.controller';
       useClass: RabbitMQService,
     },
     RouteCalculationService,
+    ScoreCalculationService,
     RabbitMQService,
     CreateRouteUseCase,
     GetRoutesUseCase,

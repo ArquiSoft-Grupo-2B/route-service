@@ -20,7 +20,7 @@ export interface RouteCompletedEvent {
   /** Indica si la ruta fue completada (siempre true en este evento) */
   completed: boolean;
 
-  /** Puntuación obtenida por el usuario (será implementado posteriormente) */
+  /** Puntuación obtenida por completar la ruta (basada en distancia) */
   score: number;
 
   /** Distancia de la ruta en kilómetros (opcional) */
