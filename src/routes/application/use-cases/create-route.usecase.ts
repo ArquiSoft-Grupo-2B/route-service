@@ -6,6 +6,7 @@ import type {
 import { Route } from '../../domain/entities/route.entity';
 import { ROUTE_REPOSITORY_TOKEN } from '../../domain/repositories/route.repository.token';
 import { RouteCalculationService } from '../../infrastructure/services/route-calculation.service';
+import { ScoreCalculationService } from '../../infrastructure/services/score-calculation.service';
 
 @Injectable()
 export class CreateRouteUseCase {
@@ -13,6 +14,7 @@ export class CreateRouteUseCase {
     @Inject(ROUTE_REPOSITORY_TOKEN)
     private readonly routeRepository: RouteRepository,
     private readonly calculationService: RouteCalculationService,
+    private readonly scoreCalculationService: ScoreCalculationService,
   ) {}
 
   async execute(data: CreateRouteData, creatorId: string): Promise<Route> {
@@ -51,7 +53,13 @@ export class CreateRouteUseCase {
         calculatedTime = metrics.est_time_min;
       }
 
-      // Asignar el creator_id y métricas calculadas
+      // Calcular score basado en la distancia
+      const score =
+        calculatedDistance != null && !Number.isNaN(calculatedDistance)
+          ? this.scoreCalculationService.calculateScore(calculatedDistance)
+          : 0;
+
+      // Asignar el creator_id, métricas calculadas y score
       const routeData: CreateRouteData = {
         ...data,
         creator_id: creatorId,
@@ -65,6 +73,8 @@ export class CreateRouteUseCase {
             : data.est_time_min != null && !Number.isNaN(data.est_time_min)
               ? Math.max(0, Math.round(data.est_time_min))
               : undefined,
+        completed_count: 0,
+        score: score,
       };
 
       return await this.routeRepository.create(routeData);

@@ -14,6 +14,8 @@ export interface CreateRouteData {
   est_time_min?: number;
   avg_rating?: number;
   geometry?: LineString;
+  completed_count?: number;
+  score?: number;
 }
 
 export interface UpdateRouteData {
@@ -24,6 +26,8 @@ export interface UpdateRouteData {
   est_time_min?: number;
   avg_rating?: number;
   geometry?: LineString;
+  completed_count?: number;
+  score?: number;
 }
 
 export interface RouteRepository {

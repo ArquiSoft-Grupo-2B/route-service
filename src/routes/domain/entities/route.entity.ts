@@ -32,6 +32,12 @@ export class Route {
   @Column({ type: 'numeric', default: 0 })
   avg_rating: number;
 
+  @Column({ type: 'int', default: 0 })
+  completed_count: number;
+
+  @Column({ type: 'int', default: 0 })
+  score: number;
+
   @Column({
     type: 'geography',
     spatialFeatureType: 'LineString',
@@ -46,3 +52,4 @@ export class Route {
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 }
+
