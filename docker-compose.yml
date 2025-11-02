@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - routes_network
+      - db_net
 
   # Aplicación NestJS
   app:
@@ -49,7 +49,8 @@ services:
       - .:/app
       - /app/node_modules
     networks:
-      - routes_network
+      - db_net
+      - backend_net
     command: npm run start:dev
 
   # Adminer para administrar la base de datos (opcional)
@@ -60,12 +61,13 @@ services:
     ports:
       - '8080:8080'
     networks:
-      - routes_network
+      - db_net
 
 volumes:
   postgres_data:
 
 networks:
-  routes_network:
+  db_net:
     external: true
-    name: routes_shared_network
+  backend_net:
+    external: true
