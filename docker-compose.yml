@@ -1,45 +1,53 @@
-version: '3.8'
-
 services:
-  # Base de datos PostgreSQL
+  # Base de datos PostgreSQL con PostGIS
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.3-alpine
     container_name: routes_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: routes_db
-      POSTGRES_USER: routes_user
-      POSTGRES_PASSWORD: routes_password
-    ports:
-      - '5432:5432'
+      POSTGRES_DB: ${POSTGRES_DB:-routes_db}
+      POSTGRES_USER: ${POSTGRES_USER:-routes_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-routes_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - routes_network
+      - db_net
 
   # Aplicación NestJS
   app:
     build: .
     container_name: routes_app
     restart: unless-stopped
+    env_file:
+      - .env.${APP_ENV:-development}
     environment:
-      NODE_ENV: development
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: routes_user
-      DB_PASSWORD: routes_password
-      DB_NAME: routes_db
-      PORT: 3000
-    ports:
-      - '3000:3000'
+      NODE_ENV: ${NODE_ENV:-development}
+      APP_ENV: ${APP_ENV:-development}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-routes_user}
+      DB_PASSWORD: ${DB_PASSWORD:-routes_password}
+      DB_NAME: ${DB_NAME:-routes_db}
+      PORT: ${PORT:-3000}
+      # Nuevas variables para microservicios
+      CALCULATION_SERVICE_URL: ${CALCULATION_SERVICE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      AUTH_SERVICE_JWT_SECRET: ${AUTH_SERVICE_JWT_SECRET}
+      # RabbitMQ Configuration
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbit:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-notification-exchange}
+      RABBITMQ_EXCHANGE_TYPE: ${RABBITMQ_EXCHANGE_TYPE:-direct}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-notification-routing-key}
     depends_on:
       - postgres
+      - rabbit
     volumes:
       - .:/app
       - /app/node_modules
     networks:
-      - routes_network
+      - db_net
+      - backend_net
     command: npm run start:dev
 
   # Adminer para administrar la base de datos (opcional)
@@ -47,14 +55,14 @@ services:
     image: adminer:latest
     container_name: routes_adminer
     restart: unless-stopped
-    ports:
-      - '8080:8080'
     networks:
-      - routes_network
+      - db_net
 
 volumes:
   postgres_data:
 
 networks:
-  routes_network:
-    driver: bridge
+  db_net:
+    external: true
+  backend_net:
+    external: true
