@@ -41,7 +41,6 @@ services:
       RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-notification-routing-key}
     depends_on:
       - postgres
-      - rabbit
     volumes:
       - .:/app
       - /app/node_modules
