@@ -10,8 +10,6 @@ services:
       POSTGRES_DB: routes_db
       POSTGRES_USER: routes_user
       POSTGRES_PASSWORD: routes_password
-    ports:
-      - '5433:5432'
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -23,8 +21,6 @@ services:
     image: adminer:latest
     container_name: routes_adminer_dev
     restart: unless-stopped
-    ports:
-      - '8080:8080'
     networks:
       - routes_dev_network
 
